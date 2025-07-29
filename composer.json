@@ -44,6 +44,7 @@
         "jeffgreco13/filament-breezy": "^2.2",
         "lab404/laravel-impersonate": "^1.7",
         "laravel/framework": "^11.9",
+        "laravel/nightwatch": "^1.11",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.8",
         "league/commonmark": "^2.4",
