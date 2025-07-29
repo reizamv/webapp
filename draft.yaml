@@ -1,0 +1,165 @@
+models:
+  # CORE EMPLOYEE DATA
+  Employee:
+    name: string
+    nip: string unique
+    email: string unique
+    join_date: date
+    updated_at: timestamp
+    softDeletes: true
+    relationships:
+      belongsTo: Position, Department
+      hasMany: PerformanceGoal, PerformanceReview, TrainingRecord, DailyChecklist, NonConformity,Pekerjaan
+
+  Position:
+    name: string
+    level: string
+    updated_at: timestamp
+
+  Department:
+    name: string
+    code: string unique
+    updated_at: timestamp
+    relationships:
+      hasMany: SOP, ChecklistTemplate
+
+  Pekerjaan:
+    uraiantugas: string
+    tugaslainnya: string
+    status: string
+    foto: string
+    bulan: datetime
+    relationships:
+      belongsTo: Employee
+      hasMany: SOP, ChecklistTemplate
+  # PERFORMANCE MANAGEMENT
+  PerformanceGoal:
+    goal: text
+    target_date: date
+    kpi: string
+    status: enum('draft','in_progress','completed','cancelled')
+    updated_at: timestamp
+    relationships:
+      belongsTo: Employee
+      hasMany: PerformanceReview
+
+  PerformanceReview:
+    score: decimal(5,2)
+    feedback: text
+    review_date: date
+    is_approved: boolean default:false
+    updated_at: timestamp
+    relationships:
+      belongsTo: Employee:reviewer_id, PerformanceGoal:goal_id
+
+  # DAILY OPERATIONS (CHECKLISTS)
+  DailyChecklist:
+    date: date
+    status: enum('draft','completed','verified') default:draft
+    updated_at: timestamp
+    relationships:
+      belongsTo: Employee, ChecklistTemplate:template_id
+      hasMany: ChecklistItem
+
+  ChecklistItem:
+    task_name: string
+    task_description: text nullable
+    is_checked: boolean default:false
+    notes: text nullable
+    photo_path: string nullable
+    checked_at: timestamp nullable
+    relationships:
+      belongsTo: DailyChecklist:checklist_id
+
+  ChecklistTemplate:
+    name: string
+    is_active: boolean default:true
+    relationships:
+      belongsTo: Department
+      hasMany: ChecklistTemplateItem, DailyChecklist
+
+  ChecklistTemplateItem:
+    task_name: string
+    task_description: text nullable
+    order: integer
+    relationships:
+      belongsTo: ChecklistTemplate:template_id
+
+  # ISO 9001 COMPLIANCE
+  SOP:
+    title: string
+    code: string unique
+    version: string
+    effective_date: date
+    file_path: string
+    updated_at: timestamp
+    relationships:
+      belongsTo: Department
+      morphMany: Document
+
+  NonConformity:
+    description: text
+    source: enum('internal_audit','customer_complaint','performance_review','daily_checklist')
+    severity: enum('minor','major','critical')
+    status: enum('open','investigation','corrected','closed')
+    updated_at: timestamp
+    relationships:
+      belongsTo: Employee
+      hasOne: CorrectiveAction
+
+  CorrectiveAction:
+    action_plan: text
+    deadline: date
+    effectiveness_check: boolean default:false
+    updated_at: timestamp
+    relationships:
+      belongsTo: NonConformity:non_confirmaty_id, Employee:responsible_id
+
+  InternalAudit:
+    audit_date: date
+    findings: text nullable
+    status: enum('planned','in_progress','completed')
+    updated_at: timestamp
+    relationships:
+      belongsTo: Employee:auditor_id, Department
+      hasMany: AuditFinding
+
+  AuditFinding:
+    description: text
+    sop_id: foreignId nullable
+    category: enum('observation','minor_nc','major_nc')
+    updated_at: timestamp
+    relationships:
+      belongsTo: InternalAudit:audit_id, SOP
+
+  # SUPPORTING TABLES
+  TrainingRecord:
+    training_name: string
+    provider: string
+    start_date: date
+    end_date: date
+    competency: enum('low','medium','high')
+    certificate_path: string nullable
+    updated_at: timestamp
+    relationships:
+      belongsTo: Employee
+
+  Document:
+    path: string
+    type: string
+    documentable_id: id
+    documentable_type: string
+    updated_at: timestamp
+    relationships:
+      morphTo: documentable
+
+  AuditLog:
+    action: string
+    model_type: string
+    model_id: id
+    old_values: json nullable
+    new_values: json nullable
+    ip_address: string
+    relationships:
+      belongsTo: Employee:user_id
+
